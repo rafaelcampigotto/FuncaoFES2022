@@ -3,14 +3,12 @@ import os
 import pathlib
 import numpy
 import pyfes
-import netCDF4 as nc
 from pathlib import Path
 import pandas as pd
-import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 
 #Função para prever a maré astronômica a partir do FES
-def FES(lat, lon, data_inicial, data_final):
+def FES(lat, lon, data_inicial, data_final, caminho):
 
     """
     Calcula a previsão de maré astronômica para uma localização e data específicas usando o algoritmo do FES
@@ -20,28 +18,29 @@ def FES(lat, lon, data_inicial, data_final):
         lon (float): longitude do ponto de interesse
         data_inicial (string): data de início da previsão no formato 'YYYY-MM-DD'
         datat_final (string): data final da previsão no formato 'YYYY-MM-DD'
+        caminho (string): caminho do diretório onde estão as constantes
 
     Returns:
         pandas.Dataframe: DataFrame contendo a previsão para o local e período selecionados.
     """
 
-    os.environ['DATASET_DIR'] = str(Path("/home/rafael/Downloads"))
-    #os.environ['DATASET_DIR'] = str(pathlib.Path().absolute().parent / 'tests' / 'python' / 'dataset')
+    #Aqui 'DATASET_DIR'  é definido como o caminho onde estão salvas as constantes (caminho esse passado como parâmetro da função), e é utilizado
+    #o os.environ para garantir que o arquivo constantes.yaml reconheça o DATASET_DIR.
+    os.environ['DATASET_DIR'] = str(Path(caminho))
 
-    # Create a Path object
-    #os.environ['DATASET_DIR']  = Path("/home/rafael/Downloads")
-    handlers = pyfes.load_config(pathlib.Path().absolute() / 'FES2022'/'constantes.yaml')
+    #Aqui cria-se o caminho do diretório atual, adicionando o arquivo.yaml (seu arquivo.yaml deve estar no seu atual diretório)
+    handlers = pyfes.load_config(pathlib.Path().absolute()/'constantes.yaml')
 
-    #Cada variável recebendo seu valor, sendo "x" o número de dias entre as datas inicial e final
+    #Cada variável recebendo seu valor, sendo "num_dias" o número de dias entre as datas inicial e final
     data_inicial = pd.to_datetime(data_inicial) 
     data_final = pd.to_datetime(data_final) 
-    x=(data_final - data_inicial).days
+    num_dias=(data_final - data_inicial).days
     data_inicial.replace(hour=0, minute=0, second=0)
 
     #Algoritmo do FES com algumas adaptações
     date = numpy.datetime64(data_inicial, 's')
 
-    dates = numpy.arange(date, date + numpy.timedelta64(x, 'D'),
+    dates = numpy.arange(date, date + numpy.timedelta64(num_dias, 'D'),
                         numpy.timedelta64(1, 'h'))
     lons = numpy.full(dates.shape, lon)
     lats = numpy.full(dates.shape, lat)
@@ -110,5 +109,7 @@ def FES(lat, lon, data_inicial, data_final):
     return df
 
 #Chamando a função com os parâmetros desejados
-resultado= FES(59.195, -7.688, '1983-01-01', '1983-01-02')
+if __name__ == "__main__":
+    resultado= FES(59.195, -7.688, '1983-01-01', '1983-01-02', '/home/rafael/Downloads')
+
 print(resultado)
